@@ -63,21 +63,19 @@ def draw_traversal(traversal):
     tree = nx.DiGraph()
     pos = {}
     visited_nodes = set()
-    current_y = 0  # Змінна для збереження поточної вертикальної позиції
 
-    # Визначення максимальної довжини обходу для налаштування кольорів
     max_depth = max(len(list(depth_first_traversal(traversal[0]))), len(traversal))
 
+    current_x = 0
     for i, node in enumerate(traversal):
-        # Обчислення колірного відтінку в залежності від позиції в обході
         color_intensity = 1 - (i / max_depth)
         color = f"#{int(255 * color_intensity):02x}{int(255 * color_intensity):02x}{int(255 * color_intensity):02x}"
 
         if node not in visited_nodes:
             visited_nodes.add(node)
             tree.add_node(node.id, color=color, label=node.val)
-            pos[node.id] = (0, current_y)  # Встановлюємо позицію вузла залежно від поточної вертикальної позиції
-            current_y -= 1  # Зменшуємо поточну вертикальну позицію для наступного шару дерева
+            pos[node.id] = (current_x, -node.val)  # Adjusting node position based on node value (for horizontal alignment)
+            current_x += 1
 
     for node in traversal:
         if node.left and node.left in visited_nodes:
@@ -91,6 +89,9 @@ def draw_traversal(traversal):
     plt.figure(figsize=(8, 5))
     nx.draw(tree, pos=pos, labels=labels, arrows=False, node_size=2500, node_color=colors)
     plt.show()
+
+
+
 
 
 

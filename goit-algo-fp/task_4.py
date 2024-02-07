@@ -1,58 +1,61 @@
+import heapq
 import uuid
 import networkx as nx
 import matplotlib.pyplot as plt
 
 
-class HeapNode:
+class Node:
     def __init__(self, key, color="skyblue"):
+        self.left = None
+        self.right = None
         self.val = key
-        self.color = color
-        self.id = str(uuid.uuid4())
+        self.color = color  # Додатковий аргумент для зберігання кольору вузла
+        self.id = str(uuid.uuid4())  # Унікальний ідентифікатор для кожного вузла
 
-
-def add_heap_edges(graph, heap, pos, parent=None, layer=1, index=1):
-    if index <= len(heap):
-        node = heap[index - 1]
+def add_edges(graph, node, pos, x=0, y=0, layer=1):
+    if node is not None:
         graph.add_node(node.id, color=node.color, label=node.val)
+        if node.left:
+            graph.add_edge(node.id, node.left.id)
+            l = x - 1 / 2 ** layer
+            pos[node.left.id] = (l, y - 1)
+            l = add_edges(graph, node.left, pos, x=l, y=y - 1, layer=layer + 1)
+        if node.right:
+            graph.add_edge(node.id, node.right.id)
+            r = x + 1 / 2 ** layer
+            pos[node.right.id] = (r, y - 1)
+            r = add_edges(graph, node.right, pos, x=r, y=y - 1, layer=layer + 1)
+    return graph
 
-        if parent:
-            graph.add_edge(parent.id, node.id)
+def draw_tree(tree_root):
+    tree = nx.DiGraph()
+    pos = {tree_root.id: (0, 0)}
+    tree = add_edges(tree, tree_root, pos)
 
-        x = pos[parent.id][0] if parent else 0
-        y = pos[parent.id][1] - 1 if parent else 0
-
-        l_child_index = 2 * index
-        r_child_index = 2 * index + 1
-
-        l_child = heap[l_child_index - 1] if l_child_index <= len(heap) else None
-        r_child = heap[r_child_index - 1] if r_child_index <= len(heap) else None
-
-        if l_child:
-            l_x = x - 1 / 2 ** layer
-            pos[l_child.id] = (l_x, y)
-            add_heap_edges(graph, heap, pos, node, layer + 1, l_child_index)
-
-        if r_child:
-            r_x = x + 1 / 2 ** layer
-            pos[r_child.id] = (r_x, y)
-            add_heap_edges(graph, heap, pos, node, layer + 1, r_child_index)
-
-
-def draw_heap(heap):
-    heap_graph = nx.Graph()  # Зміна DiGraph на Graph, бо купа не вимагає напрямленості
-    pos = {heap[0].id: (0, 0)} if heap else {}
-    add_heap_edges(heap_graph, heap, pos)
-
-    colors = [node[1]['color'] for node in heap_graph.nodes(data=True)]
-    labels = {node[0]: node[1]['label'] for node in heap_graph.nodes(data=True)}
+    colors = [node[1]['color'] for node in tree.nodes(data=True)]
+    labels = {node[0]: node[1]['label'] for node in tree.nodes(data=True)}
 
     plt.figure(figsize=(8, 5))
-    nx.draw(heap_graph, pos=pos, labels=labels, arrows=False, node_size=2500, node_color=colors)
+    nx.draw(tree, pos=pos, labels=labels, arrows=False, node_size=2500, node_color=colors)
     plt.show()
 
+def build_heap_tree(heap_array):
+    heap = [Node(val) for val in heap_array]
+    heap_graph = nx.DiGraph()
+    pos = {}
+    for i, node in enumerate(heap, start=1):
+        pos[node.id] = (i, 0)
+    for i, node in enumerate(heap, start=1):
+        if i * 2 <= len(heap):
+            node.left = heap[i * 2 - 1]
+        if i * 2 + 1 <= len(heap):
+            node.right = heap[i * 2]
+    return heap[0] if heap else None
 
-# Створення бінарної купи
-heap = [HeapNode(0), HeapNode(4), HeapNode(1), HeapNode(5), HeapNode(10), HeapNode(3)]
-
-# Відображення бінарної купи
-draw_heap(heap)
+# Припустимо, що у нас є бінарна купа у вигляді масиву
+heap_array = [1, 3, 5, 7, 9, 2, 4, 34, 2, 1, 2]
+heapq.heapify(heap_array)
+# Побудова дерева з купи
+heap_tree_root = build_heap_tree(heap_array)
+# Відображення бінарної купи у вигляді дерева
+draw_tree(heap_tree_root)
